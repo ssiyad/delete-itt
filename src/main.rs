@@ -38,15 +38,23 @@ async fn get_from_storage(storage: Arc<Mutex<Vec<PollInformation>>>, chat_id: i6
     None
 }
 
-async fn setup_poll(bot: AutoSend<Bot>, msg: Message, storage: Arc<Mutex<Vec<PollInformation>>>) -> HandlerResult {
-    dbg!(&storage);
+async fn target_me(bot: AutoSend<Bot>, msg: Message) -> bool {
+    if let Some(t) = msg.text() {
+        let me = bot.get_me().await.unwrap();
+        let username = me.username.as_ref().unwrap();
 
-    if let Some(reply_to_message_id) = msg.reply_to_message() {
-        if (get_from_storage(storage.clone(), msg.chat.id.0, reply_to_message_id.id).await).is_some() {
-            // TODO: respond with current_poll
-            return Ok(());
+        if t.len() == username.len() + 1 {
+            t.starts_with(&format!("@{}", username))
+        } else {
+            t.starts_with(&format!("@{} ", username))
         }
+    } else {
+        false
+    }
+}
 
+async fn setup_poll(bot: AutoSend<Bot>, msg: Message, storage: Arc<Mutex<Vec<PollInformation>>>) -> HandlerResult {
+    if let Some(reply_to_message_id) = msg.reply_to_message() {
         bot
             .delete_message(msg.chat.id, msg.id)
             .await?;
@@ -83,12 +91,11 @@ async fn poll_answer_handler(bot: AutoSend<Bot>, poll: PollAnswer) -> HandlerRes
     todo!()
 }
 
-async fn fun_log(bot: AutoSend<Bot>) -> HandlerResult {
-    todo!()
-}
-
 fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>> {
-    let message_handler = Update::filter_message().endpoint(setup_poll);
+    let message_handler = Update::filter_message()
+        .filter_async(target_me)
+        .endpoint(setup_poll);
+
     let poll_answer_handler = Update::filter_poll_answer().endpoint(poll_answer_handler);
 
     teloxide::dptree::entry()
