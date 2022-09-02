@@ -1,15 +1,16 @@
 use teloxide::{
     adaptors::AutoSend,
-    payloads::{SendMessageSetters, AnswerCallbackQuerySetters},
+    dispatching::UpdateFilterExt,
+    payloads::{AnswerCallbackQuerySetters, SendMessageSetters},
     requests::Requester,
-    types::{CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message},
+    types::{CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message, Update},
     Bot,
 };
 
-use crate::types::{Storage, HandlerResult, PollInformation};
 use crate::storage::{get_from_storage, put_into_storage, remove_from_storage};
+use crate::types::{HandlerResult, PollInformation, Storage, AtomicHandler};
 
-pub async fn target_me(bot: AutoSend<Bot>, msg: Message) -> bool {
+async fn target_me(bot: AutoSend<Bot>, msg: Message) -> bool {
     if let Some(t) = msg.text() {
         let me = bot.get_me().await.unwrap();
         let username = me.username.as_ref().unwrap();
@@ -24,7 +25,20 @@ pub async fn target_me(bot: AutoSend<Bot>, msg: Message) -> bool {
     }
 }
 
-pub async fn setup_poll(bot: AutoSend<Bot>, msg: Message, storage: Storage) -> HandlerResult {
+async fn non_duplicate(
+    query: CallbackQuery,
+    storage: Storage,
+) -> bool {
+    let msg = query.message.unwrap();
+
+    if let Some(info) = get_from_storage(&storage, msg.chat.id.0, msg.id).await {
+        !info.voters.contains(&query.from.id.0)
+    } else {
+        false
+    }
+}
+
+async fn setup_poll(bot: AutoSend<Bot>, msg: Message, storage: Storage) -> HandlerResult {
     if let Some(reply_to_message_id) = msg.reply_to_message() {
         bot.delete_message(msg.chat.id, msg.id).await?;
 
@@ -49,6 +63,7 @@ pub async fn setup_poll(bot: AutoSend<Bot>, msg: Message, storage: Storage) -> H
             minimum_vote_count: 5,
             vote_count_yes: 0,
             vote_count_no: 0,
+            voters: vec![],
         };
 
         put_into_storage(&storage, msg.chat.id.0, poll_msg.id, info).await;
@@ -57,7 +72,13 @@ pub async fn setup_poll(bot: AutoSend<Bot>, msg: Message, storage: Storage) -> H
     Ok(())
 }
 
-pub async fn handle_vote_yes(
+pub fn message_handler() -> AtomicHandler {
+    Update::filter_message()
+        .filter_async(target_me)
+        .endpoint(setup_poll)
+}
+
+async fn handle_vote_yes(
     bot: AutoSend<Bot>,
     query: CallbackQuery,
     storage: Storage,
@@ -66,9 +87,9 @@ pub async fn handle_vote_yes(
 
     if let Some(mut info) = get_from_storage(&storage, msg.chat.id.0, msg.id).await {
         info.vote_count_yes += 1;
+        info.voters.push(query.from.id.0);
 
-        bot
-            .answer_callback_query(query.id)
+        bot.answer_callback_query(query.id)
             .text("You voted to delete the message")
             .await?;
 
@@ -89,7 +110,14 @@ pub async fn handle_vote_yes(
     Ok(())
 }
 
-pub async fn handle_vote_no(
+pub fn vote_yes_handler() -> AtomicHandler {
+    Update::filter_callback_query()
+        .filter(|query: CallbackQuery| query.data.unwrap().eq("vote_yes"))
+        .filter_async(non_duplicate)
+        .endpoint(handle_vote_yes)
+}
+
+async fn handle_vote_no(
     bot: AutoSend<Bot>,
     query: CallbackQuery,
     storage: Storage,
@@ -98,9 +126,9 @@ pub async fn handle_vote_no(
 
     if let Some(mut info) = get_from_storage(&storage, msg.chat.id.0, msg.id).await {
         info.vote_count_no += 1;
+        info.voters.push(query.from.id.0);
 
-        bot
-            .answer_callback_query(query.id)
+        bot.answer_callback_query(query.id)
             .text("You voted not to delete the message")
             .await?;
 
@@ -115,5 +143,12 @@ pub async fn handle_vote_no(
     };
 
     Ok(())
+}
+
+pub fn vote_no_handler() -> AtomicHandler {
+    Update::filter_callback_query()
+        .filter(|query: CallbackQuery| query.data.unwrap().eq("vote_no"))
+        .filter_async(non_duplicate)
+        .endpoint(handle_vote_no)
 }
 

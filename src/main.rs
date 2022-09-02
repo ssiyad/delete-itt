@@ -1,10 +1,9 @@
 use std::{collections::HashMap, sync::Arc};
 
 use teloxide::{
-    dispatching::{Dispatcher, UpdateFilterExt, UpdateHandler},
+    dispatching::{Dispatcher, UpdateHandler},
     dptree,
     requests::RequesterExt,
-    types::{CallbackQuery, Update},
     Bot,
 };
 use tokio::sync::Mutex;
@@ -14,26 +13,14 @@ mod types;
 mod storage;
 mod utils;
 
-use crate::handlers::{target_me, setup_poll, handle_vote_yes, handle_vote_no};
+use crate::handlers::{message_handler, vote_yes_handler, vote_no_handler};
 use crate::types::Storage;
 
 fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>> {
-    let message_handler = Update::filter_message()
-        .filter_async(target_me)
-        .endpoint(setup_poll);
-
-    let vote_yes_handler = Update::filter_callback_query()
-        .filter(|query: CallbackQuery| query.data.unwrap().eq("vote_yes"))
-        .endpoint(handle_vote_yes);
-
-    let vote_no_handler = Update::filter_callback_query()
-        .filter(|query: CallbackQuery| query.data.unwrap().eq("vote_no"))
-        .endpoint(handle_vote_no);
-
     teloxide::dptree::entry()
-        .branch(message_handler)
-        .branch(vote_yes_handler)
-        .branch(vote_no_handler)
+        .branch(message_handler())
+        .branch(vote_yes_handler())
+        .branch(vote_no_handler())
 }
 
 #[tokio::main]
