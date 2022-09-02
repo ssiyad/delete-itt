@@ -1,6 +1,6 @@
 use teloxide::{
     adaptors::AutoSend,
-    payloads::SendMessageSetters,
+    payloads::{SendMessageSetters, AnswerCallbackQuerySetters},
     requests::Requester,
     types::{CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message},
     Bot,
@@ -67,6 +67,11 @@ pub async fn handle_vote_yes(
     if let Some(mut info) = get_from_storage(&storage, msg.chat.id.0, msg.id).await {
         info.vote_count_yes += 1;
 
+        bot
+            .answer_callback_query(query.id)
+            .text("You voted to delete the message")
+            .await?;
+
         if info.vote_count_yes == info.minimum_vote_count {
             bot.delete_message(info.chat_id.to_string(), info.message_id)
                 .await
@@ -93,6 +98,11 @@ pub async fn handle_vote_no(
 
     if let Some(mut info) = get_from_storage(&storage, msg.chat.id.0, msg.id).await {
         info.vote_count_no += 1;
+
+        bot
+            .answer_callback_query(query.id)
+            .text("You voted not to delete the message")
+            .await?;
 
         if info.vote_count_no == info.minimum_vote_count {
             bot.delete_message(info.chat_id.to_string(), info.poll_id)
