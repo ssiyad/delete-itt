@@ -1,10 +1,11 @@
 use teloxide::{
+    payloads::EditMessageReplyMarkupSetters,
     requests::{Request, Requester},
-    types::{CallbackQuery, Message},
+    types::{CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message},
 };
 
 use crate::storage::get_from_storage;
-use crate::types::{DeleteIttBot, Storage};
+use crate::types::{DeleteIttBot, HandlerResult, PollInformation, Storage};
 
 pub async fn non_duplicate(query: CallbackQuery, storage: Storage) -> bool {
     let msg = query.message.unwrap();
@@ -29,4 +30,23 @@ pub async fn target_me(bot: DeleteIttBot, msg: Message) -> bool {
     } else {
         false
     }
+}
+
+fn format_vote_button(text: &str, count: u8) -> String {
+    format!("{} ({})", text, count)
+}
+
+pub fn gen_markup(yes_count: u8, no_count: u8) -> InlineKeyboardMarkup {
+    InlineKeyboardMarkup::default().append_row(vec![
+        InlineKeyboardButton::callback(format_vote_button("Yes", yes_count), "vote_yes"),
+        InlineKeyboardButton::callback(format_vote_button("No", no_count), "vote_no"),
+    ])
+}
+
+pub async fn update_count(bot: &DeleteIttBot, info: &PollInformation) -> HandlerResult {
+    bot.edit_message_reply_markup(info.chat_id.to_string(), info.poll_id)
+        .reply_markup(gen_markup(info.vote_count_yes, info.vote_count_no))
+        .await?;
+
+    Ok(())
 }

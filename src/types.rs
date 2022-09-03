@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 
 use teloxide::{
-    adaptors::{AutoSend, cache_me::CacheMe},
+    adaptors::{cache_me::CacheMe, AutoSend},
     dispatching::DpHandlerDescription,
     prelude::{DependencyMap, Handler},
     Bot,

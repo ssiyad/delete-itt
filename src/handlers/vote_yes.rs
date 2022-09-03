@@ -5,9 +5,9 @@ use teloxide::{
     types::{CallbackQuery, Update},
 };
 
-use crate::handlers::utils::non_duplicate;
+use crate::handlers::utils::{non_duplicate, update_count};
 use crate::storage::{get_from_storage, put_into_storage, remove_from_storage};
-use crate::types::{AtomicHandler, HandlerResult, Storage, DeleteIttBot};
+use crate::types::{AtomicHandler, DeleteIttBot, HandlerResult, Storage};
 
 async fn handle_vote_yes(
     bot: DeleteIttBot,
@@ -23,6 +23,8 @@ async fn handle_vote_yes(
         bot.answer_callback_query(query.id)
             .text("You voted to delete the message")
             .await?;
+
+        update_count(&bot, &info).await?;
 
         if info.vote_count_yes == info.minimum_vote_count {
             bot.delete_message(info.chat_id.to_string(), info.message_id)
