@@ -25,4 +25,3 @@ pub struct PollInformation {
     pub vote_count_no: u8,
     pub voters: Vec<u64>,
 }
-

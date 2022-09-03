@@ -1,4 +1,4 @@
-use crate::types::{Storage, PollInformation};
+use crate::types::{PollInformation, Storage};
 use crate::utils::gen_combined_id;
 
 pub async fn get_from_storage(
@@ -28,4 +28,3 @@ pub async fn remove_from_storage(
     let mut s = storage.lock().await;
     s.remove(&gen_combined_id(chat_id, message_id))
 }
-
