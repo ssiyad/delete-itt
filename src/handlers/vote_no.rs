@@ -1,18 +1,16 @@
 use teloxide::{
-    adaptors::AutoSend,
     dispatching::UpdateFilterExt,
     payloads::AnswerCallbackQuerySetters,
     requests::Requester,
     types::{CallbackQuery, Update},
-    Bot,
 };
 
 use crate::handlers::utils::non_duplicate;
 use crate::storage::{get_from_storage, put_into_storage, remove_from_storage};
-use crate::types::{AtomicHandler, HandlerResult, Storage};
+use crate::types::{AtomicHandler, HandlerResult, Storage, DeleteIttBot};
 
 async fn handle_vote_no(
-    bot: AutoSend<Bot>,
+    bot: DeleteIttBot,
     query: CallbackQuery,
     storage: Storage,
 ) -> HandlerResult {

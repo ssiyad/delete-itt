@@ -1,12 +1,10 @@
 use teloxide::{
-    adaptors::AutoSend,
-    requests::Requester,
+    requests::{Request, Requester},
     types::{CallbackQuery, Message},
-    Bot,
 };
 
 use crate::storage::get_from_storage;
-use crate::types::Storage;
+use crate::types::{DeleteIttBot, Storage};
 
 pub async fn non_duplicate(query: CallbackQuery, storage: Storage) -> bool {
     let msg = query.message.unwrap();
@@ -18,9 +16,9 @@ pub async fn non_duplicate(query: CallbackQuery, storage: Storage) -> bool {
     }
 }
 
-pub async fn target_me(bot: AutoSend<Bot>, msg: Message) -> bool {
+pub async fn target_me(bot: DeleteIttBot, msg: Message) -> bool {
     if let Some(t) = msg.text() {
-        let me = bot.get_me().await.unwrap();
+        let me = bot.get_me().send().await.unwrap();
         let username = me.username.as_ref().unwrap();
 
         if t.len() == username.len() + 1 {

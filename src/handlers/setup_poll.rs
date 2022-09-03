@@ -1,17 +1,15 @@
 use teloxide::{
-    adaptors::AutoSend,
     dispatching::UpdateFilterExt,
     payloads::SendMessageSetters,
     requests::Requester,
     types::{InlineKeyboardButton, InlineKeyboardMarkup, Message, Update},
-    Bot,
 };
 
 use crate::handlers::utils::target_me;
 use crate::storage::put_into_storage;
-use crate::types::{AtomicHandler, HandlerResult, PollInformation, Storage};
+use crate::types::{AtomicHandler, HandlerResult, PollInformation, Storage, DeleteIttBot};
 
-async fn setup_poll(bot: AutoSend<Bot>, msg: Message, storage: Storage) -> HandlerResult {
+async fn setup_poll(bot: DeleteIttBot, msg: Message, storage: Storage) -> HandlerResult {
     if let Some(reply_to_message_id) = msg.reply_to_message() {
         bot.delete_message(msg.chat.id, msg.id).await?;
 

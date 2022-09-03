@@ -1,8 +1,10 @@
 use std::{collections::HashMap, sync::Arc};
 
 use teloxide::{
+    adaptors::{AutoSend, cache_me::CacheMe},
     dispatching::DpHandlerDescription,
     prelude::{DependencyMap, Handler},
+    Bot,
 };
 use tokio::sync::Mutex;
 
@@ -14,6 +16,7 @@ pub type AtomicHandler = Handler<
     Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>,
     DpHandlerDescription,
 >;
+pub type DeleteIttBot = CacheMe<AutoSend<Bot>>;
 
 #[derive(Debug, Clone)]
 pub struct PollInformation {

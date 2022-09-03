@@ -25,7 +25,7 @@ fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>>
 
 #[tokio::main]
 async fn main() {
-    let bot = Bot::from_env().auto_send();
+    let bot = Bot::from_env().auto_send().cache_me();
     let storage: Storage = Arc::new(Mutex::new(HashMap::new()));
 
     Dispatcher::builder(bot, schema())
