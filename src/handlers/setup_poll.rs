@@ -5,9 +5,9 @@ use teloxide::{
     types::{Message, Update},
 };
 
+use super::utils::{target_me, update_count};
 use crate::storage::put_into_storage;
 use crate::types::{AtomicHandler, DeleteIttBot, HandlerResult, PollInformation, Storage};
-use super::utils::{update_count, target_me};
 
 async fn setup_poll(bot: DeleteIttBot, msg: Message, storage: Storage) -> HandlerResult {
     if let Some(reply_to_message_id) = msg.reply_to_message() {
