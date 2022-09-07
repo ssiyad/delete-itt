@@ -4,14 +4,25 @@ use teloxide::{
     types::{CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message},
 };
 
-use crate::storage::get_from_storage;
-use crate::types::{DeleteIttBot, HandlerResult, PollInformation, Storage};
+use crate::database::{Database, Poll};
+use crate::types::{DeleteIttBot, HandlerResult};
 
-pub async fn non_duplicate(query: CallbackQuery, storage: Storage) -> bool {
+pub async fn non_duplicate(query: CallbackQuery, db: Database) -> bool {
     let msg = query.message.unwrap();
 
-    if let Some(info) = get_from_storage(&storage, msg.chat.id.0, msg.id).await {
-        !info.voters.contains(&query.from.id.0)
+    if let Ok(info) = db.get_poll(msg.chat.id.0, msg.id).await {
+        if let Some(poll) = info {
+            if let Ok(voter) = db
+                .get_voter(poll.id, msg.from().unwrap().id.0.try_into().unwrap())
+                .await
+            {
+                return voter.is_none();
+            }
+
+            false
+        } else {
+            false
+        }
     } else {
         false
     }
@@ -43,7 +54,7 @@ pub fn gen_markup(yes_count: u8, no_count: u8) -> InlineKeyboardMarkup {
     ])
 }
 
-pub async fn update_count(bot: &DeleteIttBot, info: &PollInformation) -> HandlerResult {
+pub async fn update_count(bot: &DeleteIttBot, info: &Poll) -> HandlerResult {
     bot.edit_message_reply_markup(info.chat_id.to_string(), info.poll_id)
         .reply_markup(gen_markup(info.vote_count_yes, info.vote_count_no))
         .await?;

@@ -1,20 +1,16 @@
-use std::{collections::HashMap, sync::Arc};
-
 use teloxide::{
     dispatching::{Dispatcher, UpdateHandler},
     dptree,
     requests::RequesterExt,
     Bot,
 };
-use tokio::sync::Mutex;
 
+mod database;
 mod handlers;
-mod storage;
 mod types;
-mod utils;
 
+use crate::database::Database;
 use crate::handlers::{settings_handler, setup_poll_handler, vote_no_handler, vote_yes_handler};
-use crate::types::Storage;
 
 fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>> {
     teloxide::dptree::entry()
@@ -27,10 +23,10 @@ fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>>
 #[tokio::main]
 async fn main() {
     let bot = Bot::from_env().auto_send().cache_me();
-    let storage: Storage = Arc::new(Mutex::new(HashMap::new()));
+    let db = Database::new().await;
 
     Dispatcher::builder(bot, schema())
-        .dependencies(dptree::deps![storage])
+        .dependencies(dptree::deps![db])
         .enable_ctrlc_handler()
         .build()
         .dispatch()

@@ -6,10 +6,11 @@ use teloxide::{
 };
 
 use super::utils::{target_me, update_count};
-use crate::storage::put_into_storage;
-use crate::types::{AtomicHandler, DeleteIttBot, HandlerResult, PollInformation, Storage};
 
-async fn setup_poll(bot: DeleteIttBot, msg: Message, storage: Storage) -> HandlerResult {
+use crate::types::{AtomicHandler, DeleteIttBot, HandlerResult};
+use crate::Database;
+
+async fn setup_poll(bot: DeleteIttBot, msg: Message, db: Database) -> HandlerResult {
     if let Some(reply_to_message_id) = msg.reply_to_message() {
         bot.delete_message(msg.chat.id, msg.id).await?;
 
@@ -21,18 +22,15 @@ async fn setup_poll(bot: DeleteIttBot, msg: Message, storage: Storage) -> Handle
             .reply_to_message_id(reply_to_message_id.id)
             .await?;
 
-        let info = PollInformation {
-            chat_id: msg.chat.id.0,
-            poll_id: poll_msg.id,
-            message_id: reply_to_message_id.id,
-            minimum_vote_count: 5,
-            vote_count_yes: 0,
-            vote_count_no: 0,
-            voters: vec![],
-        };
+        db.create_poll(msg.chat.id.0, poll_msg.id, reply_to_message_id.id, 5)
+            .await
+            .unwrap();
 
-        update_count(&bot, &info).await?;
-        put_into_storage(&storage, msg.chat.id.0, poll_msg.id, info).await;
+        if let Ok(v) = db.get_poll(msg.chat.id.0, poll_msg.id).await {
+            if let Some(e) = v {
+                update_count(&bot, &e).await?;
+            }
+        }
     }
 
     Ok(())
