@@ -10,19 +10,15 @@ use crate::types::{DeleteIttBot, HandlerResult};
 pub async fn non_duplicate(query: CallbackQuery, db: Database) -> bool {
     let msg = query.message.unwrap();
 
-    if let Ok(info) = db.get_poll(msg.chat.id.0, msg.id).await {
-        if let Some(poll) = info {
-            if let Ok(voter) = db
-                .get_voter(poll.id, msg.from().unwrap().id.0.try_into().unwrap())
-                .await
-            {
-                return voter.is_none();
-            }
-
-            false
-        } else {
-            false
+    if let Ok(Some(poll)) = db.get_poll(msg.chat.id.0, msg.id).await {
+        if let Ok(voter) = db
+            .get_voter(poll.id, msg.from().unwrap().id.0.try_into().unwrap())
+            .await
+        {
+            return voter.is_none();
         }
+
+        false
     } else {
         false
     }
