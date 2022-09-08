@@ -5,7 +5,8 @@ use teloxide::{
     types::{CallbackQuery, Update},
 };
 
-use crate::handlers::utils::{non_duplicate, update_count};
+use super::filters::non_duplicate;
+use super::utils::update_count;
 use crate::types::{AtomicHandler, DeleteIttBot, HandlerResult, VoteType};
 use crate::Database;
 

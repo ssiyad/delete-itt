@@ -1,3 +1,4 @@
+mod filters;
 mod settings;
 mod setup_poll;
 mod utils;

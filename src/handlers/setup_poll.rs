@@ -5,7 +5,8 @@ use teloxide::{
     types::{Message, Update},
 };
 
-use super::utils::{target_me, update_count};
+use super::filters::target_me;
+use super::utils::update_count;
 
 use crate::types::{AtomicHandler, DeleteIttBot, HandlerResult};
 use crate::Database;

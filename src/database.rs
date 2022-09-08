@@ -79,7 +79,10 @@ impl Database {
     }
 
     async fn init(&self) {
-        sqlx::query(SCHEMA_INIT).execute(&self.pool).await.expect("Database initialisation failed");
+        sqlx::query(SCHEMA_INIT)
+            .execute(&self.pool)
+            .await
+            .expect("Database initialisation failed");
     }
 
     pub async fn create_poll(
