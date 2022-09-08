@@ -5,7 +5,10 @@ use teloxide::{
     types::{CallbackQuery, Update},
 };
 
-use super::{filters::non_duplicate, utils::update_count};
+use super::{
+    filters::{callback_query_eq, non_duplicate},
+    utils::update_count,
+};
 use crate::types::{AtomicHandler, DeleteIttBot, HandlerResult, VoteType};
 use crate::Database;
 
@@ -41,7 +44,7 @@ async fn handle_vote_yes(bot: DeleteIttBot, query: CallbackQuery, db: Database) 
 
 pub fn vote_yes_handler() -> AtomicHandler {
     Update::filter_callback_query()
-        .filter(|query: CallbackQuery| query.data.unwrap().eq("vote_yes"))
+        .filter(callback_query_eq("vote_yes"))
         .filter_async(non_duplicate)
         .endpoint(handle_vote_yes)
 }

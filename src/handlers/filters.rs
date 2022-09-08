@@ -6,6 +6,16 @@ use teloxide::{
 use crate::database::Database;
 use crate::types::DeleteIttBot;
 
+pub fn callback_query_eq<S>(data: S) -> impl Fn(CallbackQuery) -> bool
+where
+    S: Copy + Into<String>,
+{
+    move |cq: CallbackQuery| match cq.data {
+        Some(d) => d.eq(&data.into()),
+        None => false,
+    }
+}
+
 pub async fn non_duplicate(query: CallbackQuery, db: Database) -> bool {
     match query.message {
         Some(msg) => match db.get_poll(msg.chat.id.0, msg.id).await {
