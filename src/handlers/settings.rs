@@ -9,7 +9,7 @@ use teloxide::{
 use crate::database::Database;
 use crate::types::{AtomicHandler, DeleteIttBot, HandlerResult};
 
-use super::filters::is_admin;
+use super::filters::is_privileged;
 
 #[derive(BotCommands, Clone)]
 #[command(rename = "snake_case", description = "some description")]
@@ -68,6 +68,6 @@ async fn handler(bot: DeleteIttBot, msg: Message, command: Cmd, db: Database) ->
 pub fn settings_handler() -> AtomicHandler {
     Update::filter_message()
         .filter_command::<Cmd>()
-        .filter_async(is_admin)
+        .filter_async(is_privileged)
         .endpoint(handler)
 }

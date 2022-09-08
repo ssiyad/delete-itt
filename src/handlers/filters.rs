@@ -6,7 +6,7 @@ use teloxide::{
 use crate::database::Database;
 use crate::types::DeleteIttBot;
 
-pub async fn is_admin(bot: DeleteIttBot, msg: Message) -> bool {
+pub async fn is_privileged(bot: DeleteIttBot, msg: Message) -> bool {
     match msg.from() {
         Some(from) => match bot.get_chat_member(msg.chat.id, from.id).await {
             Ok(member) => member.is_privileged(),
