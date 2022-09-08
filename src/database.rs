@@ -1,11 +1,14 @@
 #![allow(dead_code)]
-use sqlx::{query, query_as, sqlite::SqlitePoolOptions, Error, FromRow, SqlitePool};
+use sqlx::{
+    any::{AnyPool, AnyPoolOptions},
+    query, query_as, Error, FromRow,
+};
 
 use crate::types::VoteType;
 
 #[derive(Debug, Clone)]
 pub struct Database {
-    pool: SqlitePool,
+    pool: AnyPool,
 }
 
 #[derive(Debug, Clone, FromRow)]
@@ -62,11 +65,11 @@ impl Database {
     where
         S: Into<String>,
     {
-        let pool = SqlitePoolOptions::new()
+        let pool = AnyPoolOptions::new()
             .max_connections(5)
             .connect(&url.into())
             .await
-            .unwrap();
+            .expect("Database connection failed");
 
         let db = Database { pool };
 

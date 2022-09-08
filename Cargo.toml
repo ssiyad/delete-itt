@@ -7,6 +7,6 @@ edition = "2021"
 
 [dependencies]
 dotenv = "0.15.0"
-sqlx = { version = "0.6.1", features = ["runtime-tokio-rustls", "sqlite"] }
+sqlx = { version = "0.6.1", features = ["runtime-tokio-rustls", "all-databases"] }
 teloxide = { version = "0.10.1", features = ["macros", "auto-send", "ctrlc_handler", "cache-me"] }
 tokio = { version = "1.20.1", features = ["rt-multi-thread", "macros"] }
