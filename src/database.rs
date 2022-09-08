@@ -14,9 +14,9 @@ pub struct Poll {
     pub chat_id: i64,
     pub poll_id: i32,
     pub message_id: i32,
-    pub minimum_vote_count: u8,
-    pub vote_count_yes: u8,
-    pub vote_count_no: u8,
+    pub minimum_vote_count: i64,
+    pub vote_count_yes: i64,
+    pub vote_count_no: i64,
 }
 
 #[derive(Debug, Clone, FromRow)]
@@ -30,7 +30,7 @@ pub struct Voter {
 pub struct Chat {
     pub id: i64,
     pub chat_id: i64,
-    pub minimum_vote_count: u8,
+    pub minimum_vote_count: i64,
 }
 
 static SCHEMA_INIT: &str = "
@@ -53,7 +53,7 @@ user_id INTEGER NOT NULL
 CREATE TABLE IF NOT EXISTS chats (
 id INTEGER PRIMARY KEY,
 chat_id INTEGER NOT NULL,
-minimum_vote_count INTEGER NOT NULL
+minimum_vote_count DEFAULT 5
 );
 ";
 
@@ -81,7 +81,7 @@ impl Database {
         chat_id: i64,
         poll_id: i32,
         message_id: i32,
-        minimum_vote_count: u8,
+        minimum_vote_count: i64,
     ) -> Result<(), Error> {
         query("INSERT INTO polls (chat_id, poll_id, message_id, minimum_vote_count) VALUES ($1, $2, $3, $4)")
             .bind(chat_id)
@@ -175,13 +175,14 @@ impl Database {
         Ok(affected > 0)
     }
 
-    pub async fn create_chat(&self, chat_id: i64) -> Result<(), Error> {
-        query_as::<_, Chat>("INSERT INTO chats (chat_id) VALUES ($1)")
+    pub async fn create_chat(&self, chat_id: i64) -> Result<bool, Error> {
+        let affected = query("INSERT INTO chats (chat_id) VALUES ($1)")
             .bind(chat_id)
-            .fetch_one(&self.pool)
-            .await?;
+            .execute(&self.pool)
+            .await?
+            .rows_affected();
 
-        Ok(())
+        Ok(affected > 0)
     }
 
     pub async fn get_chat(&self, chat_id: i64) -> Result<Option<Chat>, Error> {
@@ -191,8 +192,32 @@ impl Database {
             .await
     }
 
+    pub async fn get_chat_votes(&self, chat_id: i64) -> Result<Option<i64>, Error> {
+        let x = query_as::<_, (i64,)>("SELECT minimum_vote_count FROM chats WHERE chat_id = $1")
+            .bind(chat_id)
+            .fetch_optional(&self.pool)
+            .await?;
+
+        if let Some((y,)) = x {
+            Ok(Some(y))
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub async fn set_chat_votes(&self, chat_id: i64, votes_count: i64) -> Result<bool, Error> {
+        let affected = query("UPDATE chats SET minimum_vote_count = $1 WHERE chat_id = $2")
+            .bind(votes_count)
+            .bind(chat_id)
+            .execute(&self.pool)
+            .await?
+            .rows_affected();
+
+        Ok(affected > 0)
+    }
+
     pub async fn remove_chat(&self, chat_id: i64) -> Result<bool, Error> {
-        let affected = query("DELETE FROM chats WHERE id = $1")
+        let affected = query("DELETE FROM chats WHERE chat_id = $1")
             .bind(chat_id)
             .execute(&self.pool)
             .await?

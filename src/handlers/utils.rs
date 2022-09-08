@@ -39,11 +39,11 @@ pub async fn target_me(bot: DeleteIttBot, msg: Message) -> bool {
     }
 }
 
-fn format_vote_button(text: &str, count: u8) -> String {
+fn format_vote_button(text: &str, count: i64) -> String {
     format!("{} ({})", text, count)
 }
 
-pub fn gen_markup(yes_count: u8, no_count: u8) -> InlineKeyboardMarkup {
+pub fn gen_markup(yes_count: i64, no_count: i64) -> InlineKeyboardMarkup {
     InlineKeyboardMarkup::default().append_row(vec![
         InlineKeyboardButton::callback(format_vote_button("Yes", yes_count), "vote_yes"),
         InlineKeyboardButton::callback(format_vote_button("No", no_count), "vote_no"),
