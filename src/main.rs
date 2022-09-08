@@ -1,3 +1,4 @@
+use dotenv::dotenv;
 use teloxide::{
     dispatching::{Dispatcher, UpdateHandler},
     dptree,
@@ -22,8 +23,13 @@ fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>>
 
 #[tokio::main]
 async fn main() {
-    let bot = Bot::from_env().auto_send().cache_me();
-    let db = Database::new().await;
+    dotenv().ok();
+
+    let token = std::env::var("BOT_TOKEN").expect("Missing bot token env variable");
+    let db_url = std::env::var("DB_URL").expect("Missing database url env variable");
+
+    let bot = Bot::new(token).auto_send().cache_me();
+    let db = Database::new(db_url).await;
 
     Dispatcher::builder(bot, schema())
         .dependencies(dptree::deps![db])

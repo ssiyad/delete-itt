@@ -58,10 +58,13 @@ minimum_vote_count DEFAULT 5
 ";
 
 impl Database {
-    pub async fn new() -> Self {
+    pub async fn new<S>(url: S) -> Self
+    where
+        S: Into<String>,
+    {
         let pool = SqlitePoolOptions::new()
             .max_connections(5)
-            .connect("sqlite::memory:")
+            .connect(&url.into())
             .await
             .unwrap();
 
