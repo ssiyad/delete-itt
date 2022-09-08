@@ -37,8 +37,7 @@ async fn setup_poll(bot: DeleteIttBot, msg: Message, db: Database) -> HandlerRes
             reply_to_message_id.id,
             min_vote_count,
         )
-        .await
-        .unwrap();
+        .await?;
 
         if let Ok(Some(e)) = db.get_poll(msg.chat.id.0, poll_msg.id).await {
             update_count(&bot, &e).await?;
