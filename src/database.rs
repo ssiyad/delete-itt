@@ -57,7 +57,8 @@ user_id INTEGER NOT NULL
 CREATE TABLE IF NOT EXISTS chats (
 id INTEGER PRIMARY KEY,
 chat_id INTEGER NOT NULL,
-minimum_vote_count DEFAULT 5
+minimum_vote_count DEFAULT 5,
+locale VARCHAR DEFAULT 'en'
 );
 ";
 
