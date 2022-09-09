@@ -72,6 +72,10 @@ async fn language_handler(
 ) -> HandlerResult {
     let chat_id = msg.chat.id.0;
 
+    if let Ok(None) = db.get_chat(chat_id).await {
+        db.create_chat(chat_id).await.unwrap();
+    }
+
     if let Ok(true) = db.set_chat_locale(chat_id, lang).await {
         let response = loc.t(
             "language_updated_response",
