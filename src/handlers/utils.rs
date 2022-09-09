@@ -4,7 +4,7 @@ use teloxide::{
     types::{InlineKeyboardButton, InlineKeyboardMarkup},
 };
 
-use crate::database::Poll;
+use crate::database::{Poll, Database};
 use crate::types::{DeleteIttBot, HandlerResult};
 
 fn format_vote_button(text: &str, count: i64) -> String {
@@ -24,4 +24,11 @@ pub async fn update_count(bot: &DeleteIttBot, info: &Poll) -> HandlerResult {
         .await?;
 
     Ok(())
+}
+
+pub async fn get_locale(db: &Database, chat_id: i64) -> String {
+    match db.get_chat_locale(chat_id).await {
+        Ok(Some(lang)) => lang,
+        _ => "en".to_string(),
+    }
 }

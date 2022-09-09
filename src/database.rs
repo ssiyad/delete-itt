@@ -34,6 +34,7 @@ pub struct Chat {
     pub id: i64,
     pub chat_id: i64,
     pub minimum_vote_count: i64,
+    pub locale: String,
 }
 
 static SCHEMA_INIT: &str = "
@@ -217,6 +218,30 @@ impl Database {
     pub async fn set_chat_votes(&self, chat_id: i64, votes_count: i64) -> Result<bool, Error> {
         let affected = query("UPDATE chats SET minimum_vote_count = $1 WHERE chat_id = $2")
             .bind(votes_count)
+            .bind(chat_id)
+            .execute(&self.pool)
+            .await?
+            .rows_affected();
+
+        Ok(affected > 0)
+    }
+
+    pub async fn get_chat_locale(&self, chat_id: i64) -> Result<Option<String>, Error> {
+        let x = query_as::<_, (String,)>("SELECT locale FROM chats WHERE chat_id = $1")
+            .bind(chat_id)
+            .fetch_optional(&self.pool)
+            .await?;
+
+        if let Some((y,)) = x {
+            Ok(Some(y))
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub async fn set_chat_locale(&self, chat_id: i64, locale: String) -> Result<bool, Error> {
+        let affected = query("UPDATE chats SET locale = $1 WHERE chat_id = $2")
+            .bind(locale)
             .bind(chat_id)
             .execute(&self.pool)
             .await?

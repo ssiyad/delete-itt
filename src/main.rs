@@ -1,4 +1,7 @@
+use std::sync::Arc;
+
 use dotenv::dotenv;
+use loon::Config;
 use teloxide::{
     dispatching::{Dispatcher, UpdateHandler},
     dptree,
@@ -30,9 +33,15 @@ async fn main() {
 
     let bot = Bot::new(token).auto_send().cache_me();
     let db = Database::new(db_url).await;
+    let loc_dict = Arc::new(
+        Config::default()
+            .with_path_pattern("locales/*.yml")
+            .finish()
+            .expect("Can not load localization"),
+    );
 
     Dispatcher::builder(bot, schema())
-        .dependencies(dptree::deps![db])
+        .dependencies(dptree::deps![db, loc_dict])
         .enable_ctrlc_handler()
         .build()
         .dispatch()
