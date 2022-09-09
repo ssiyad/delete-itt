@@ -4,7 +4,7 @@ use teloxide::{
     types::{InlineKeyboardButton, InlineKeyboardMarkup},
 };
 
-use crate::database::{Poll, Database};
+use crate::database::{Database, Poll};
 use crate::types::{DeleteIttBot, HandlerResult};
 
 fn format_vote_button(text: &str, count: i64) -> String {
