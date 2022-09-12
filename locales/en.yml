@@ -1,5 +1,6 @@
 language:
   updated: 'Successfully updated language as {language}'
+  list_title: 'Supported languages'
 vote_count:
   updated: 'Successfully updated minimum vote count to {count}'
 vote:

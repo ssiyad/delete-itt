@@ -24,6 +24,9 @@ enum Cmd {
 
     #[command(description = "Set bot language for this chat")]
     Language { lang: String },
+
+    #[command(description = "Get a list of supported languages")]
+    Languages,
 }
 
 async fn help_handler(bot: &DeleteIttBot, msg: &Message) -> HandlerResult {
@@ -108,6 +111,27 @@ async fn language_handler(
     Ok(())
 }
 
+async fn languages_handler(
+    bot: &DeleteIttBot,
+    msg: &Message,
+    db: &Database,
+    loc: &Localization,
+    locales: &[Locale],
+) -> HandlerResult {
+    let title = loc.t(
+        "language.list_title",
+        Opts::default().locale(&get_locale(db, msg.chat.id.0).await),
+    )?;
+
+    let response = format!("*{}*\n{}", title, locales.join(" "));
+
+    bot.send_message(msg.chat.id, response)
+        .parse_mode(ParseMode::MarkdownV2)
+        .await?;
+
+    Ok(())
+}
+
 async fn handler(
     bot: DeleteIttBot,
     msg: Message,
@@ -120,6 +144,7 @@ async fn handler(
         Cmd::Help => help_handler(&bot, &msg).await,
         Cmd::VoteCount { count } => votes_count_handler(&bot, &msg, &db, &loc, count).await,
         Cmd::Language { lang } => language_handler(&bot, &msg, &db, &loc, lang, &locales).await,
+        Cmd::Languages => languages_handler(&bot, &msg, &db, &loc, &locales).await,
     }
 }
 
