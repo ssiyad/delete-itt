@@ -1,13 +1,14 @@
-use std::{fs::read_dir, sync::Arc};
+use std::{env::var, fs::read_dir, sync::Arc};
 
 use dotenv::dotenv;
 use loon::Config;
 use teloxide::{
     dispatching::{Dispatcher, UpdateHandler},
     dptree,
-    requests::RequesterExt,
+    requests::{Requester, RequesterExt},
     Bot,
 };
+use url::Url;
 
 mod database;
 mod handlers;
@@ -33,6 +34,12 @@ async fn main() {
     let db_url = std::env::var("DB_URL").expect("Missing database url env variable");
 
     let bot = Bot::new(token).auto_send().cache_me();
+
+    if let Ok(u) = var("WEBHOOK_URL") {
+        let url = Url::parse(&u).expect("Invalid webhook URL");
+        bot.set_webhook(url).await.expect("Error setting webhook");
+    };
+
     let db = Database::new(db_url).await;
     let loc_dict = Arc::new(
         Config::default()
