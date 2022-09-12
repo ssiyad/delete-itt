@@ -8,10 +8,10 @@ use teloxide::{
 };
 
 use crate::database::Database;
-use crate::types::{AtomicHandler, DeleteIttBot, HandlerResult, Localization};
+use crate::types::{AtomicHandler, DeleteIttBot, HandlerResult, Locale, Localization};
 
 use super::filters::is_privileged;
-use super::utils::get_locale;
+use super::utils::{delete_message, get_locale};
 
 #[derive(BotCommands, Clone)]
 #[command(rename = "snake_case", description = "some description")]
@@ -68,12 +68,20 @@ async fn language_handler(
     msg: &Message,
     db: &Database,
     loc: &Localization,
-    lang: String,
+    lang: Locale,
+    locales: &[Locale],
 ) -> HandlerResult {
+    if !locales.contains(&lang) {
+        bot.send_message(msg.chat.id, format!("Invalid language: {}", lang))
+            .await?;
+
+        return Ok(());
+    }
+
     let chat_id = msg.chat.id.0;
 
     if let Ok(None) = db.get_chat(chat_id).await {
-        db.create_chat(chat_id).await.unwrap();
+        db.create_chat(chat_id).await?;
     }
 
     if let Ok(true) = db.set_chat_locale(chat_id, lang).await {
@@ -96,11 +104,12 @@ async fn handler(
     command: Cmd,
     db: Database,
     loc: Localization,
+    locales: Vec<Locale>,
 ) -> HandlerResult {
     match command {
         Cmd::Help => help_handler(&bot, &msg).await,
         Cmd::VoteCount { count } => votes_count_handler(&bot, &msg, &db, count).await,
-        Cmd::Language { lang } => language_handler(&bot, &msg, &db, &loc, lang).await,
+        Cmd::Language { lang } => language_handler(&bot, &msg, &db, &loc, lang, &locales).await,
     }
 }
 
@@ -108,5 +117,6 @@ pub fn settings_handler() -> AtomicHandler {
     Update::filter_message()
         .filter_command::<Cmd>()
         .filter_async(is_privileged)
-        .endpoint(handler)
+        .map_async(handler)
+        .endpoint(delete_message)
 }

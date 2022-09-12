@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{fs::read_dir, sync::Arc};
 
 use dotenv::dotenv;
 use loon::Config;
@@ -15,6 +15,7 @@ mod types;
 
 use crate::database::Database;
 use crate::handlers::{settings_handler, setup_poll_handler, vote_no_handler, vote_yes_handler};
+use crate::types::Locale;
 
 fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>> {
     teloxide::dptree::entry()
@@ -39,9 +40,17 @@ async fn main() {
             .finish()
             .expect("Can not load localization"),
     );
+    let locales = read_dir("locales/")
+        .expect("Can not open locales directory")
+        .into_iter()
+        .filter(|p| p.is_ok())
+        .map(|p| p.unwrap().file_name().into_string().unwrap())
+        .filter(|s| s.contains(".yml"))
+        .map(|s| s.split(".yml").next().unwrap().into())
+        .collect::<Vec<Locale>>();
 
     Dispatcher::builder(bot, schema())
-        .dependencies(dptree::deps![db, loc_dict])
+        .dependencies(dptree::deps![db, loc_dict, locales])
         .enable_ctrlc_handler()
         .build()
         .dispatch()

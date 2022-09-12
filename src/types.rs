@@ -16,6 +16,7 @@ pub type AtomicHandler = Handler<
     DpHandlerDescription,
 >;
 pub type Localization = Arc<Dictionary>;
+pub type Locale = String;
 pub type DeleteIttBot = CacheMe<AutoSend<Bot>>;
 
 pub enum VoteType {

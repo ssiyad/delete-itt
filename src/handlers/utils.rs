@@ -1,7 +1,7 @@
 use teloxide::{
     payloads::EditMessageReplyMarkupSetters,
     requests::Requester,
-    types::{InlineKeyboardButton, InlineKeyboardMarkup},
+    types::{InlineKeyboardButton, InlineKeyboardMarkup, Message},
 };
 
 use crate::database::{Database, Poll};
@@ -31,4 +31,10 @@ pub async fn get_locale(db: &Database, chat_id: i64) -> String {
         Ok(Some(lang)) => lang,
         _ => "en".to_string(),
     }
+}
+
+pub async fn delete_message(bot: DeleteIttBot, msg: Message) -> HandlerResult {
+    bot.delete_message(msg.chat.id, msg.id).await?;
+
+    Ok(())
 }
