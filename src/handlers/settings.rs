@@ -38,6 +38,7 @@ async fn votes_count_handler(
     bot: &DeleteIttBot,
     msg: &Message,
     db: &Database,
+    loc: &Localization,
     count: i64,
 ) -> HandlerResult {
     if count <= 0 || count > 10 {
@@ -55,7 +56,14 @@ async fn votes_count_handler(
     }
 
     if let Ok(true) = db.set_chat_votes(chat_id, count).await {
-        bot.send_message(msg.chat.id, "Successfully updated minimum vote count")
+        let response = loc.t(
+            "vote_count.updated",
+            Opts::default()
+                .var("count", count)
+                .locale(&get_locale(db, chat_id).await),
+        )?;
+
+        bot.send_message(msg.chat.id, response)
             .reply_to_message_id(msg.id)
             .await?;
     }
@@ -84,10 +92,12 @@ async fn language_handler(
         db.create_chat(chat_id).await?;
     }
 
-    if let Ok(true) = db.set_chat_locale(chat_id, lang).await {
+    if let Ok(true) = db.set_chat_locale(chat_id, &lang).await {
         let response = loc.t(
-            "language_updated_response",
-            Opts::default().locale(&get_locale(db, chat_id).await),
+            "language.updated",
+            Opts::default()
+                .var("language", lang)
+                .locale(&get_locale(db, chat_id).await),
         )?;
 
         bot.send_message(msg.chat.id, response)
@@ -108,7 +118,7 @@ async fn handler(
 ) -> HandlerResult {
     match command {
         Cmd::Help => help_handler(&bot, &msg).await,
-        Cmd::VoteCount { count } => votes_count_handler(&bot, &msg, &db, count).await,
+        Cmd::VoteCount { count } => votes_count_handler(&bot, &msg, &db, &loc, count).await,
         Cmd::Language { lang } => language_handler(&bot, &msg, &db, &loc, lang, &locales).await,
     }
 }

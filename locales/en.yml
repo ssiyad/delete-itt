@@ -1,1 +1,11 @@
-language_updated_response: "Successfully updated language"
+language:
+  updated: 'Successfully updated language as {language}'
+vote_count:
+  updated: 'Successfully updated minimum vote count to {count}'
+vote:
+  voted_to_delete: 'You voted to delete the message'
+  voted_to_not_delete: 'You voted to not delete the message'
+  title: 'Should I delete this message? Minimum number of votes needed is {count}'
+  'yes': 'Yes'
+  'no': 'No'
+

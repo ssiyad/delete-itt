@@ -1,3 +1,4 @@
+use loon::Opts;
 use teloxide::{
     dispatching::UpdateFilterExt,
     payloads::SendMessageSetters,
@@ -6,12 +7,17 @@ use teloxide::{
 };
 
 use super::filters::target_me;
-use super::utils::update_count;
+use super::utils::{get_locale, update_count};
 
-use crate::types::{AtomicHandler, DeleteIttBot, HandlerResult};
+use crate::types::{AtomicHandler, DeleteIttBot, HandlerResult, Localization};
 use crate::Database;
 
-async fn setup_poll(bot: DeleteIttBot, msg: Message, db: Database) -> HandlerResult {
+async fn setup_poll(
+    bot: DeleteIttBot,
+    msg: Message,
+    db: Database,
+    loc: Localization,
+) -> HandlerResult {
     if let Some(reply_to_message_id) = msg.reply_to_message() {
         bot.delete_message(msg.chat.id, msg.id).await?;
 
@@ -21,14 +27,15 @@ async fn setup_poll(bot: DeleteIttBot, msg: Message, db: Database) -> HandlerRes
             .unwrap_or(Some(5))
             .unwrap_or(5);
 
+        let response = loc.t(
+            "vote.title",
+            Opts::default()
+                .var("count", min_vote_count)
+                .locale(&get_locale(&db, msg.chat.id.0).await),
+        )?;
+
         let poll_msg = bot
-            .send_message(
-                msg.chat.id,
-                format!(
-                    "Should I delete this message? Minimum number of votes needed is {}",
-                    min_vote_count
-                ),
-            )
+            .send_message(msg.chat.id, response)
             .reply_to_message_id(reply_to_message_id.id)
             .await?;
 
@@ -41,7 +48,7 @@ async fn setup_poll(bot: DeleteIttBot, msg: Message, db: Database) -> HandlerRes
         .await?;
 
         if let Ok(Some(e)) = db.get_poll(msg.chat.id.0, poll_msg.id).await {
-            update_count(&bot, &e).await?;
+            update_count(&bot, &e, &db, &loc).await?;
         }
     }
 

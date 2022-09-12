@@ -240,7 +240,7 @@ impl Database {
         }
     }
 
-    pub async fn set_chat_locale(&self, chat_id: i64, locale: String) -> Result<bool, Error> {
+    pub async fn set_chat_locale(&self, chat_id: i64, locale: &str) -> Result<bool, Error> {
         let affected = query("UPDATE chats SET locale = $1 WHERE chat_id = $2")
             .bind(locale)
             .bind(chat_id)

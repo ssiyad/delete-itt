@@ -1,3 +1,4 @@
+use loon::Opts;
 use teloxide::{
     dispatching::UpdateFilterExt,
     payloads::AnswerCallbackQuerySetters,
@@ -7,19 +8,27 @@ use teloxide::{
 
 use super::{
     filters::{callback_query_eq, non_duplicate},
-    utils::update_count,
+    utils::{get_locale, update_count},
 };
-use crate::types::{AtomicHandler, DeleteIttBot, HandlerResult, VoteType};
+use crate::types::{AtomicHandler, DeleteIttBot, HandlerResult, Localization, VoteType};
 use crate::Database;
 
-async fn handle_vote_yes(bot: DeleteIttBot, query: CallbackQuery, db: Database) -> HandlerResult {
+async fn handle_vote_yes(
+    bot: DeleteIttBot,
+    query: CallbackQuery,
+    db: Database,
+    loc: Localization,
+) -> HandlerResult {
     if let Some(msg) = query.message {
         if let Ok(Some(mut info)) = db.get_poll(msg.chat.id.0, msg.id).await {
             info.vote_count_yes += 1;
 
-            bot.answer_callback_query(query.id)
-                .text("You voted to delete the message")
-                .await?;
+            let response = loc.t(
+                "vote.voted_to_delete",
+                Opts::default().locale(&get_locale(&db, msg.chat.id.0).await),
+            )?;
+
+            bot.answer_callback_query(query.id).text(response).await?;
 
             if info.vote_count_yes == info.minimum_vote_count {
                 bot.delete_message(info.chat_id.to_string(), info.message_id)
@@ -31,7 +40,7 @@ async fn handle_vote_yes(bot: DeleteIttBot, query: CallbackQuery, db: Database) 
                 db.remove_voters(info.id).await?;
                 db.remove_poll(info.id).await?;
             } else {
-                update_count(&bot, &info).await?;
+                update_count(&bot, &info, &db, &loc).await?;
                 db.create_voter(info.id, query.from.id.0.try_into().unwrap())
                     .await?;
                 db.register_vote(info.id, VoteType::Yes).await?;
