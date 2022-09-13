@@ -5,6 +5,7 @@ use loon::Config;
 use teloxide::{
     dispatching::{Dispatcher, UpdateHandler},
     dptree,
+    payloads::SetWebhookSetters,
     requests::{Requester, RequesterExt},
     Bot,
 };
@@ -37,7 +38,12 @@ async fn main() {
 
     if let Ok(u) = var("WEBHOOK_URL") {
         let url = Url::parse(&u).expect("Invalid webhook URL");
-        bot.set_webhook(url).await.expect("Error setting webhook");
+
+        bot.set_webhook(url)
+            .drop_pending_updates(true)
+            .max_connections(100)
+            .await
+            .expect("Error setting webhook");
     };
 
     let db = Database::new(db_url).await;
