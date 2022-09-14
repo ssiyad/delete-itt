@@ -64,10 +64,8 @@ async fn help_handler(
         .join("\n");
 
     bot.send_message(msg.chat.id, response)
-        .reply_to_message_id(msg.id)
         .parse_mode(ParseMode::MarkdownV2)
-        .await
-        .unwrap();
+        .await?;
 
     Ok(())
 }
@@ -101,9 +99,7 @@ async fn votes_count_handler(
                 .locale(&get_locale(db, chat_id).await),
         )?;
 
-        bot.send_message(msg.chat.id, response)
-            .reply_to_message_id(msg.id)
-            .await?;
+        bot.send_message(msg.chat.id, response).await?;
     }
 
     Ok(())
@@ -187,6 +183,6 @@ pub fn settings_handler() -> AtomicHandler {
     Update::filter_message()
         .filter_command::<Cmd>()
         .filter_async(is_privileged)
-        .map_async(handler)
-        .endpoint(delete_message)
+        .map_async(delete_message)
+        .endpoint(handler)
 }
