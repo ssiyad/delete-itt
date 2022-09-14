@@ -14,18 +14,18 @@ use super::filters::is_privileged;
 use super::utils::{delete_message, get_locale};
 
 #[derive(BotCommands, Clone)]
-#[command(rename = "snake_case", description = "some description")]
+#[command(rename = "snake_case")]
 enum Cmd {
-    #[command(description = "Display this text")]
+    #[command()]
     Help,
 
-    #[command(description = "Set minimum needed votes. Takes an integer as parameter")]
+    #[command()]
     VoteCount { count: i64 },
 
-    #[command(description = "Set bot language for this chat")]
+    #[command()]
     Language { lang: String },
 
-    #[command(description = "Get a list of supported languages")]
+    #[command()]
     Languages,
 }
 
