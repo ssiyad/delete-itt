@@ -36,6 +36,7 @@ async fn setup_poll(
 
         let poll_msg = bot
             .send_message(msg.chat.id, response)
+            .protect_content(true)
             .reply_to_message_id(reply_to_message_id.id)
             .await?;
 
