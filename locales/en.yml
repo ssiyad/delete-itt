@@ -9,4 +9,10 @@ vote:
   title: 'Should I delete this message? Minimum number of votes needed is {count}'
   'yes': 'Yes'
   'no': 'No'
+help:
+  commands:
+    help: 'Show this text'
+    vote_count: 'Set minium needed votes. Takes an integer as argument'
+    languages: 'Show a list of supported languages'
+    language: 'Set a language for this chat'
 

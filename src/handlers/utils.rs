@@ -30,14 +30,16 @@ pub async fn update_count(
     db: &Database,
     loc: &Localization,
 ) -> HandlerResult {
+    let locale = &get_locale(db, info.chat_id).await;
+
     let yes_txt = loc.t(
         "vote.yes",
-        Opts::default().locale(&get_locale(db, info.chat_id).await),
+        Opts::default().locale(locale),
     )?;
 
     let no_txt = loc.t(
         "vote.no",
-        Opts::default().locale(&get_locale(db, info.chat_id).await),
+        Opts::default().locale(locale),
     )?;
 
     bot.edit_message_reply_markup(info.chat_id.to_string(), info.poll_id)

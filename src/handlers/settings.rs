@@ -4,7 +4,7 @@ use teloxide::{
     payloads::SendMessageSetters,
     requests::Requester,
     types::{Message, ParseMode, Update},
-    utils::command::BotCommands,
+    utils::{command::BotCommands, markdown::escape as markdown_escape},
 };
 
 use crate::database::Database;
@@ -29,10 +29,45 @@ enum Cmd {
     Languages,
 }
 
-async fn help_handler(bot: &DeleteIttBot, msg: &Message) -> HandlerResult {
-    bot.send_message(msg.chat.id, Cmd::descriptions().to_string())
+fn format_help_command<S, T>(locale: S, command: T, loc: &Localization) -> String
+where
+    S: Into<String>,
+    T: Into<String> + Clone,
+{
+    let response = loc
+        .t(
+            format!("help.commands.{}", command.clone().into()).as_str(),
+            Opts::default().locale(&locale.into()),
+        )
+        .unwrap_or_else(|_| "".into());
+
+    format!(
+        "/{} — _{}_",
+        markdown_escape(&command.into()),
+        markdown_escape(&response)
+    )
+}
+
+async fn help_handler(
+    bot: &DeleteIttBot,
+    msg: &Message,
+    db: &Database,
+    loc: &Localization,
+) -> HandlerResult {
+    let chat_id = msg.chat.id.0;
+    let locale = &get_locale(db, chat_id).await;
+
+    let response = vec!["help", "vote_count", "language", "languages"]
+        .into_iter()
+        .map(|s| format_help_command(locale, s, loc))
+        .collect::<Vec<String>>()
+        .join("\n");
+
+    bot.send_message(msg.chat.id, response)
         .reply_to_message_id(msg.id)
-        .await?;
+        .parse_mode(ParseMode::MarkdownV2)
+        .await
+        .unwrap();
 
     Ok(())
 }
@@ -141,7 +176,7 @@ async fn handler(
     locales: Vec<Locale>,
 ) -> HandlerResult {
     match command {
-        Cmd::Help => help_handler(&bot, &msg).await,
+        Cmd::Help => help_handler(&bot, &msg, &db, &loc).await,
         Cmd::VoteCount { count } => votes_count_handler(&bot, &msg, &db, &loc, count).await,
         Cmd::Language { lang } => language_handler(&bot, &msg, &db, &loc, lang, &locales).await,
         Cmd::Languages => languages_handler(&bot, &msg, &db, &loc, &locales).await,
