@@ -69,6 +69,7 @@ async fn setup_poll(
 
 pub fn setup_poll_handler() -> AtomicHandler {
     Update::filter_message()
+        .filter(|msg: Message| msg.chat.is_group() || msg.chat.is_supergroup())
         .filter_async(target_me)
         .endpoint(setup_poll)
 }
