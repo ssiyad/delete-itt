@@ -1,4 +1,4 @@
-use std::{env::var, fs::read_dir, sync::Arc};
+use std::{env, fs, sync::Arc};
 
 use dotenv::dotenv;
 use loon::Config;
@@ -31,12 +31,12 @@ fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>>
 async fn main() {
     dotenv().ok();
 
-    let token = std::env::var("BOT_TOKEN").expect("Missing bot token env variable");
-    let db_url = std::env::var("DB_URL").expect("Missing database url env variable");
+    let token = env::var("BOT_TOKEN").expect("Missing bot token env variable");
+    let db_url = env::var("DB_URL").expect("Missing database url env variable");
 
     let bot = Bot::new(token).auto_send().cache_me();
 
-    if let Ok(u) = var("WEBHOOK_URL") {
+    if let Ok(u) = env::var("WEBHOOK_URL") {
         let url = Url::parse(&u).expect("Invalid webhook URL");
 
         bot.set_webhook(url)
@@ -53,7 +53,7 @@ async fn main() {
             .finish()
             .expect("Can not load localization"),
     );
-    let locales = read_dir("locales/")
+    let locales = fs::read_dir("locales/")
         .expect("Can not open locales directory")
         .into_iter()
         .filter(|p| p.is_ok())
@@ -61,6 +61,31 @@ async fn main() {
         .filter(|s| s.contains(".yml"))
         .map(|s| s.split(".yml").next().unwrap().into())
         .collect::<Vec<Locale>>();
+
+    let x = db.clone();
+    let y = bot.clone();
+
+    tokio::spawn(async move {
+        loop {
+            let ts: i64 = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs()
+                .try_into()
+                .unwrap();
+
+            if let Some(l) = x.get_pending_messages_to_delete(ts).await.ok() {
+                for m in l.into_iter() {
+                    y.delete_message(m.chat_id.to_string(), m.message_id)
+                        .await
+                        .ok();
+                    x.remove_from_scheduled_delete(m.id).await.ok();
+                }
+            };
+
+            tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+        }
+    });
 
     Dispatcher::builder(bot, schema())
         .dependencies(dptree::deps![db, loc_dict, locales])

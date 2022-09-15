@@ -37,6 +37,14 @@ pub struct Chat {
     pub locale: String,
 }
 
+#[derive(Debug, Clone, FromRow)]
+pub struct MessageToDelete {
+    pub id: i64,
+    pub chat_id: i64,
+    pub message_id: i32,
+    pub timestamp: i64,
+}
+
 static SCHEMA_INIT: &str = "
 CREATE TABLE IF NOT EXISTS polls (
 id INTEGER PRIMARY KEY,
@@ -59,6 +67,13 @@ id INTEGER PRIMARY KEY,
 chat_id INTEGER NOT NULL,
 minimum_vote_count DEFAULT 5,
 locale VARCHAR DEFAULT 'en'
+);
+
+CREATE TABLE IF NOT EXISTS scheduled_to_delete (
+id INTEGER PRIMARY KEY,
+chat_id INTEGER NOT NULL,
+message_id INTEGER NOT NULL,
+timestamp INTEGER NOT NULL
 );
 ";
 
@@ -254,6 +269,45 @@ impl Database {
     pub async fn remove_chat(&self, chat_id: i64) -> Result<bool, Error> {
         let affected = query("DELETE FROM chats WHERE chat_id = $1")
             .bind(chat_id)
+            .execute(&self.pool)
+            .await?
+            .rows_affected();
+
+        Ok(affected > 0)
+    }
+
+    pub async fn schedule_message_delete(
+        &self,
+        chat_id: i64,
+        message_id: i64,
+        timestamp: i64,
+    ) -> Result<bool, Error> {
+        let affected = query(
+            "INSERT INTO scheduled_to_delete (chat_id, message_id, timestamp) VALUES ($1, $2, $3)",
+        )
+        .bind(chat_id)
+        .bind(message_id)
+        .bind(timestamp)
+        .execute(&self.pool)
+        .await?
+        .rows_affected();
+
+        Ok(affected > 0)
+    }
+
+    pub async fn get_pending_messages_to_delete(
+        &self,
+        timestamp: i64,
+    ) -> Result<Vec<MessageToDelete>, Error> {
+        query_as("SELECT * FROM scheduled_to_delete WHERE timestamp <= $1")
+            .bind(timestamp)
+            .fetch_all(&self.pool)
+            .await
+    }
+
+    pub async fn remove_from_scheduled_delete(&self, id: i64) -> Result<bool, Error> {
+        let affected = query("DELETE FROM scheduled_to_delete WHERE id = $1")
+            .bind(id)
             .execute(&self.pool)
             .await?
             .rows_affected();

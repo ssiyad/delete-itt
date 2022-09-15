@@ -34,11 +34,24 @@ async fn handle_vote_yes(
                 bot.delete_message(info.chat_id.to_string(), info.message_id)
                     .await?;
 
-                bot.delete_message(info.chat_id.to_string(), info.poll_id)
-                    .await?;
+                bot.edit_message_reply_markup(info.chat_id.to_string(), info.poll_id)
+                    .await
+                    .unwrap();
 
                 db.remove_voters(info.id).await?;
                 db.remove_poll(info.id).await?;
+                db.schedule_message_delete(
+                    info.chat_id,
+                    info.poll_id.into(),
+                    (std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap()
+                        + std::time::Duration::from_secs(5))
+                    .as_secs()
+                    .try_into()
+                    .unwrap(),
+                )
+                .await?;
             } else {
                 update_count(&bot, &info, &db, &loc).await?;
                 db.create_voter(info.id, query.from.id.0.try_into().unwrap())
