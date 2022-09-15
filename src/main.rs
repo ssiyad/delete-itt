@@ -74,7 +74,7 @@ async fn main() {
                 .try_into()
                 .unwrap();
 
-            if let Some(l) = x.get_pending_messages_to_delete(ts).await.ok() {
+            if let Ok(l) = x.get_pending_messages_to_delete(ts).await {
                 for m in l.into_iter() {
                     y.delete_message(m.chat_id.to_string(), m.message_id)
                         .await
