@@ -6,7 +6,7 @@ vote_count:
 vote:
   voted_to_delete: 'You voted to delete the message'
   voted_to_not_delete: 'You voted to not delete the message'
-  title: 'Should I delete this message? Minimum number of votes needed is {count}'
+  title: 'Should I delete this message from {from_name}? Minimum number of votes needed is {count}'
   'yes': 'Yes'
   'no': 'No'
 help:

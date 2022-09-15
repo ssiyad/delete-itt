@@ -3,7 +3,7 @@ use teloxide::{
     dispatching::UpdateFilterExt,
     payloads::SendMessageSetters,
     requests::Requester,
-    types::{Message, Update},
+    types::{Message, ParseMode, Update},
 };
 
 use super::filters::target_me;
@@ -28,39 +28,44 @@ async fn setup_poll(
             if member.is_privileged() {
                 return Ok(());
             };
-        }
 
-        bot.delete_message(msg.chat.id, msg.id).await?;
+            bot.delete_message(msg.chat.id, msg.id).await?;
 
-        let min_vote_count = db
-            .get_chat_votes(msg.chat.id.0)
-            .await
-            .unwrap_or(Some(5))
-            .unwrap_or(5);
+            let min_vote_count = db
+                .get_chat_votes(msg.chat.id.0)
+                .await
+                .unwrap_or(Some(5))
+                .unwrap_or(5);
 
-        let response = loc.t(
-            "vote.title",
-            Opts::default()
-                .var("count", min_vote_count)
-                .locale(&get_locale(&db, msg.chat.id.0).await),
-        )?;
+            let response = loc.t(
+                "vote.title",
+                Opts::default()
+                    .var("count", min_vote_count)
+                    .var(
+                        "from_name",
+                        format!("[{}]({})", from.full_name(), from.url().to_string()),
+                    )
+                    .locale(&get_locale(&db, msg.chat.id.0).await),
+            )?;
 
-        let poll_msg = bot
-            .send_message(msg.chat.id, response)
-            .protect_content(true)
-            .reply_to_message_id(reply_to_message_id.id)
+            let poll_msg = bot
+                .send_message(msg.chat.id, format!("*{}*", response))
+                .reply_to_message_id(reply_to_message_id.id)
+                .parse_mode(ParseMode::MarkdownV2)
+                .protect_content(true)
+                .await?;
+
+            db.create_poll(
+                msg.chat.id.0,
+                poll_msg.id,
+                reply_to_message_id.id,
+                min_vote_count,
+            )
             .await?;
 
-        db.create_poll(
-            msg.chat.id.0,
-            poll_msg.id,
-            reply_to_message_id.id,
-            min_vote_count,
-        )
-        .await?;
-
-        if let Ok(Some(e)) = db.get_poll(msg.chat.id.0, poll_msg.id).await {
-            update_count(&bot, &e, &db, &loc).await?;
+            if let Ok(Some(e)) = db.get_poll(msg.chat.id.0, poll_msg.id).await {
+                update_count(&bot, &e, &db, &loc).await?;
+            }
         }
     }
 
