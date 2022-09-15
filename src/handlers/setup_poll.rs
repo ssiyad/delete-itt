@@ -19,6 +19,17 @@ async fn setup_poll(
     loc: Localization,
 ) -> HandlerResult {
     if let Some(reply_to_message_id) = msg.reply_to_message() {
+        if let Some(from) = reply_to_message_id.from() {
+            if from.is_anonymous() || from.is_channel() {
+                return Ok(());
+            }
+
+            let member = bot.get_chat_member(msg.chat.id, from.id).await?;
+            if member.is_privileged() {
+                return Ok(());
+            };
+        }
+
         bot.delete_message(msg.chat.id, msg.id).await?;
 
         let min_vote_count = db
