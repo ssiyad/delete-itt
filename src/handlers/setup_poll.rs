@@ -43,7 +43,7 @@ async fn setup_poll(
                     .var("count", min_vote_count)
                     .var(
                         "from_name",
-                        format!("[{}]({})", from.full_name(), from.url().to_string()),
+                        format!("[{}]({})", from.full_name(), from.url()),
                     )
                     .locale(&get_locale(&db, msg.chat.id.0).await),
             )?;
