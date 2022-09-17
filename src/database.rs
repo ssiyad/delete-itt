@@ -17,6 +17,7 @@ pub struct Poll {
     pub chat_id: i64,
     pub poll_id: i32,
     pub message_id: i32,
+    pub message_user_id: i64,
     pub minimum_vote_count: i64,
     pub vote_count_yes: i64,
     pub vote_count_no: i64,
@@ -51,6 +52,8 @@ id INTEGER PRIMARY KEY,
 chat_id INTEGER NOT NULL,
 poll_id INTEGER NOT NULL,
 message_id INTEGER NOT NULL,
+message_user_id INTEGER NOT NULL,
+message_user_name VARCHAR NOT NULL,
 minimum_vote_count INTEGER NOT NULL,
 vote_count_yes INTEGER DEFAULT 0,
 vote_count_no INTEGER DEFAULT 0
@@ -107,15 +110,21 @@ impl Database {
         chat_id: i64,
         poll_id: i32,
         message_id: i32,
+        message_user_id: i64,
         minimum_vote_count: i64,
     ) -> Result<(), Error> {
-        query("INSERT INTO polls (chat_id, poll_id, message_id, minimum_vote_count) VALUES ($1, $2, $3, $4)")
-            .bind(chat_id)
-            .bind(poll_id)
-            .bind(message_id)
-            .bind(minimum_vote_count)
-            .execute(&self.pool)
-            .await?;
+        query(
+            "INSERT INTO polls \
+            (chat_id, poll_id, message_id, message_user_id, minimum_vote_count) \
+            VALUES ($1, $2, $3, $4, $5)",
+        )
+        .bind(chat_id)
+        .bind(poll_id)
+        .bind(message_id)
+        .bind(message_user_id)
+        .bind(minimum_vote_count)
+        .execute(&self.pool)
+        .await?;
 
         Ok(())
     }

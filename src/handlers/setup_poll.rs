@@ -59,6 +59,7 @@ async fn setup_poll(
                 msg.chat.id.0,
                 poll_msg.id,
                 reply_to_message_id.id,
+                from.id.0.try_into().unwrap(),
                 min_vote_count,
             )
             .await?;

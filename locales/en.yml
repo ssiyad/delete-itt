@@ -9,6 +9,8 @@ vote:
   title: 'Should I delete this message from {from_name}? Minimum number of votes needed is {count}'
   'yes': 'Yes'
   'no': 'No'
+result:
+  deleted: 'Deleted a message from {from_name}'
 help:
   commands:
     help: 'Show this text'

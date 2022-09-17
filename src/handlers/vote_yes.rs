@@ -1,9 +1,9 @@
 use loon::Opts;
 use teloxide::{
     dispatching::UpdateFilterExt,
-    payloads::AnswerCallbackQuerySetters,
+    payloads::{AnswerCallbackQuerySetters, EditMessageTextSetters},
     requests::Requester,
-    types::{CallbackQuery, Update},
+    types::{CallbackQuery, ParseMode, Update, UserId},
 };
 
 use super::{
@@ -23,20 +23,39 @@ async fn handle_vote_yes(
         if let Ok(Some(mut info)) = db.get_poll(msg.chat.id.0, msg.id).await {
             info.vote_count_yes += 1;
 
-            let response = loc.t(
-                "vote.voted_to_delete",
-                Opts::default().locale(&get_locale(&db, msg.chat.id.0).await),
-            )?;
+            let locale = get_locale(&db, msg.chat.id.0).await;
+
+            let response = loc.t("vote.voted_to_delete", Opts::default().locale(&locale))?;
 
             bot.answer_callback_query(query.id).text(response).await?;
 
-            if info.vote_count_yes == info.minimum_vote_count {
+            if info.vote_count_yes >= info.minimum_vote_count {
                 bot.delete_message(info.chat_id.to_string(), info.message_id)
                     .await?;
 
+                let from = bot
+                    .get_chat_member(
+                        info.chat_id.to_string(),
+                        UserId(info.message_user_id.try_into().unwrap()),
+                    )
+                    .await?;
+
+                let txt_result = loc.t(
+                    "result.deleted",
+                    Opts::default()
+                        .var(
+                            "from_name",
+                            format!("[{}]({})", from.user.full_name(), from.user.url()),
+                        )
+                        .locale(&locale),
+                )?;
+
+                bot.edit_message_text(info.chat_id.to_string(), info.poll_id, txt_result)
+                    .parse_mode(ParseMode::MarkdownV2)
+                    .await?;
+
                 bot.edit_message_reply_markup(info.chat_id.to_string(), info.poll_id)
-                    .await
-                    .unwrap();
+                    .await?;
 
                 db.remove_voters(info.id).await?;
                 db.remove_poll(info.id).await?;
