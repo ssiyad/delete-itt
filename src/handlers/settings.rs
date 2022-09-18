@@ -2,8 +2,8 @@ use loon::Opts;
 use teloxide::{
     dispatching::{HandlerExt, UpdateFilterExt},
     payloads::SendMessageSetters,
-    requests::{Request, Requester},
-    types::{Message, ParseMode, Update},
+    requests::Requester,
+    types::{Me, Message, ParseMode, Update},
     utils::{command::BotCommands, markdown::escape as markdown_escape},
 };
 
@@ -250,9 +250,7 @@ async fn group_handler(
     }
 }
 
-async fn start_handler(bot: &DeleteIttBot, msg: &Message) -> HandlerResult {
-    let me = bot.get_me().send().await?;
-
+async fn start_handler(bot: &DeleteIttBot, me: &Me, msg: &Message) -> HandlerResult {
     let start_msg = markdown_escape(&format!(
         "Hello! I'm {}. I can help you keep your chats clean. Mention me (@{}) in reply to \
         the message you want to delete. I will then set up a poll, which is used to take a \
@@ -271,9 +269,14 @@ async fn start_handler(bot: &DeleteIttBot, msg: &Message) -> HandlerResult {
     Ok(())
 }
 
-async fn peronal_handler(bot: DeleteIttBot, msg: Message, command: PersonalCmd) -> HandlerResult {
+async fn peronal_handler(
+    bot: DeleteIttBot,
+    me: Me,
+    msg: Message,
+    command: PersonalCmd,
+) -> HandlerResult {
     match command {
-        PersonalCmd::Start => start_handler(&bot, &msg).await,
+        PersonalCmd::Start => start_handler(&bot, &me, &msg).await,
     }
 }
 
