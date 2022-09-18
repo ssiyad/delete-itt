@@ -55,6 +55,13 @@ pub async fn get_locale(db: &Database, chat_id: i64) -> String {
     }
 }
 
+pub async fn get_poll_delete_delay(db: &Database, chat_id: i64) -> i64 {
+    match db.get_chat_poll_delete_delay(chat_id).await {
+        Ok(Some(delay)) => delay,
+        _ => 5,
+    }
+}
+
 pub async fn delete_message(bot: DeleteIttBot, msg: Message) -> HandlerResult {
     bot.delete_message(msg.chat.id, msg.id).await?;
 

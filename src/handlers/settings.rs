@@ -27,6 +27,9 @@ enum GroupCmd {
 
     #[command()]
     Languages,
+
+    #[command()]
+    PollDeleteDelay { delay: i64 },
 }
 
 #[derive(BotCommands, Clone)]
@@ -64,11 +67,17 @@ async fn help_handler(
     let chat_id = msg.chat.id.0;
     let locale = &get_locale(db, chat_id).await;
 
-    let response = vec!["help", "vote_count", "language", "languages"]
-        .into_iter()
-        .map(|s| format_help_command(locale, s, loc))
-        .collect::<Vec<String>>()
-        .join("\n");
+    let response = vec![
+        "help",
+        "vote_count",
+        "language",
+        "languages",
+        "poll_delete_delay",
+    ]
+    .into_iter()
+    .map(|s| format_help_command(locale, s, loc))
+    .collect::<Vec<String>>()
+    .join("\n");
 
     bot.send_message(msg.chat.id, response)
         .parse_mode(ParseMode::MarkdownV2)
@@ -170,6 +179,56 @@ async fn languages_handler(
     Ok(())
 }
 
+async fn poll_delete_delay_handler(
+    bot: &DeleteIttBot,
+    msg: &Message,
+    db: &Database,
+    loc: &Localization,
+    delay: i64,
+) -> HandlerResult {
+    let chat_id = msg.chat.id.0;
+    let locale = get_locale(db, chat_id).await;
+
+    if delay > 60 {
+        let response = loc.t(
+            "poll_delete_delay.should_maximum",
+            Opts::default().var("delay", 60).locale(&locale),
+        )?;
+
+        bot.send_message(msg.chat.id, response).await?;
+
+        return Ok(());
+    }
+
+    if delay < 5 {
+        let response = loc.t(
+            "poll_delete_delay.should_minimum",
+            Opts::default().var("delay", 5).locale(&locale),
+        )?;
+
+        bot.send_message(msg.chat.id, response).await?;
+
+        return Ok(());
+    }
+
+    if let Ok(None) = db.get_chat(chat_id).await {
+        db.create_chat(chat_id).await?;
+    }
+
+    if let Ok(true) = db.set_chat_poll_delete_delay(chat_id, delay).await {
+        let response = loc.t(
+            "poll_delete_delay.updated",
+            Opts::default().var("delay", delay).locale(&locale),
+        )?;
+
+        bot.send_message(msg.chat.id, response)
+            .parse_mode(ParseMode::MarkdownV2)
+            .await?;
+    }
+
+    Ok(())
+}
+
 async fn group_handler(
     bot: DeleteIttBot,
     msg: Message,
@@ -185,6 +244,9 @@ async fn group_handler(
             language_handler(&bot, &msg, &db, &loc, lang, &locales).await
         }
         GroupCmd::Languages => languages_handler(&bot, &msg, &db, &loc, &locales).await,
+        GroupCmd::PollDeleteDelay { delay } => {
+            poll_delete_delay_handler(&bot, &msg, &db, &loc, delay).await
+        }
     }
 }
 

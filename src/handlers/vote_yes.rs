@@ -8,7 +8,7 @@ use teloxide::{
 
 use super::{
     filters::{callback_query_eq, non_duplicate},
-    utils::{get_locale, update_count},
+    utils::{get_locale, get_poll_delete_delay, update_count},
 };
 use crate::types::{AtomicHandler, DeleteIttBot, HandlerResult, Localization, VoteType};
 use crate::Database;
@@ -65,7 +65,12 @@ async fn handle_vote_yes(
                     (std::time::SystemTime::now()
                         .duration_since(std::time::UNIX_EPOCH)
                         .unwrap()
-                        + std::time::Duration::from_secs(5))
+                        + std::time::Duration::from_secs(
+                            get_poll_delete_delay(&db, info.chat_id)
+                                .await
+                                .try_into()
+                                .unwrap(),
+                        ))
                     .as_secs()
                     .try_into()
                     .unwrap(),

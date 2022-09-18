@@ -1,6 +1,10 @@
 language:
   updated: 'Successfully updated language as {language}'
   list_title: 'Supported languages'
+poll_delete_delay:
+  updated: 'Updated poll delete delay as {delay} seconds'
+  should_minimum: 'Minimum poll delete delay should be {delay}'
+  should_maximum: 'Maximum poll delete delay should be {delay}'
 vote_count:
   updated: 'Successfully updated minimum vote count to {count}'
 vote:
@@ -17,4 +21,5 @@ help:
     vote_count: 'Set minium needed votes. Takes an integer as argument'
     languages: 'Show a list of supported languages'
     language: 'Set a language for this chat'
+    poll_delete_delay: 'Seconds after which deleted poll should be deleted'
 

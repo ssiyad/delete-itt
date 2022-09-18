@@ -36,6 +36,7 @@ pub struct Chat {
     pub chat_id: i64,
     pub minimum_vote_count: i64,
     pub locale: String,
+    pub poll_delete_delay: i64,
 }
 
 #[derive(Debug, Clone, FromRow)]
@@ -68,8 +69,9 @@ user_id INTEGER NOT NULL
 CREATE TABLE IF NOT EXISTS chats (
 id INTEGER PRIMARY KEY,
 chat_id INTEGER NOT NULL,
-minimum_vote_count DEFAULT 5,
-locale VARCHAR DEFAULT 'en'
+minimum_vote_count INTEGER DEFAULT 5,
+locale VARCHAR DEFAULT 'en',
+poll_delete_delay INTEGER DEFAULT 5
 );
 
 CREATE TABLE IF NOT EXISTS scheduled_to_delete (
@@ -267,6 +269,34 @@ impl Database {
     pub async fn set_chat_locale(&self, chat_id: i64, locale: &str) -> Result<bool, Error> {
         let affected = query("UPDATE chats SET locale = $1 WHERE chat_id = $2")
             .bind(locale)
+            .bind(chat_id)
+            .execute(&self.pool)
+            .await?
+            .rows_affected();
+
+        Ok(affected > 0)
+    }
+
+    pub async fn get_chat_poll_delete_delay(&self, chat_id: i64) -> Result<Option<i64>, Error> {
+        let x = query_as::<_, (i64,)>("SELECT poll_delete_delay FROM chats WHERE chat_id = $1")
+            .bind(chat_id)
+            .fetch_optional(&self.pool)
+            .await?;
+
+        if let Some((y,)) = x {
+            Ok(Some(y))
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub async fn set_chat_poll_delete_delay(
+        &self,
+        chat_id: i64,
+        poll_delete_delay: i64,
+    ) -> Result<bool, Error> {
+        let affected = query("UPDATE chats SET poll_delete_delay = $1 WHERE chat_id = $2")
+            .bind(poll_delete_delay)
             .bind(chat_id)
             .execute(&self.pool)
             .await?
