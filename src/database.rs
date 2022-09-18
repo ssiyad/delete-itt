@@ -54,7 +54,6 @@ chat_id INTEGER NOT NULL,
 poll_id INTEGER NOT NULL,
 message_id INTEGER NOT NULL,
 message_user_id INTEGER NOT NULL,
-message_user_name VARCHAR NOT NULL,
 minimum_vote_count INTEGER NOT NULL,
 vote_count_yes INTEGER DEFAULT 0,
 vote_count_no INTEGER DEFAULT 0
