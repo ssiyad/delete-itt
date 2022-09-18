@@ -250,6 +250,7 @@ version = "0.1.0"
 dependencies = [
  "dotenv",
  "loon",
+ "regex",
  "sqlx",
  "teloxide",
  "tokio",

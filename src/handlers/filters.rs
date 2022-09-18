@@ -1,6 +1,7 @@
+use regex::Regex;
 use teloxide::{
-    requests::{Request, Requester},
-    types::{CallbackQuery, Message},
+    requests::Requester,
+    types::{CallbackQuery, Me, Message},
 };
 
 use crate::database::Database;
@@ -45,22 +46,11 @@ pub async fn non_duplicate(query: CallbackQuery, db: Database) -> bool {
     }
 }
 
-pub async fn target_me(bot: DeleteIttBot, msg: Message) -> bool {
-    if let Some(t) = msg.text() {
-        match bot.get_me().send().await {
-            Ok(me) => match me.username.as_ref() {
-                Some(username) => {
-                    if t.len() == username.len() + 1 {
-                        t.starts_with(&format!("@{}", username))
-                    } else {
-                        t.starts_with(&format!("@{} ", username))
-                    }
-                }
-                _ => false,
-            },
-            _ => false,
-        }
-    } else {
-        false
+pub async fn target_me(me: Me, msg: Message) -> bool {
+    match msg.text() {
+        Some(txt) => Regex::new(format!("@{}(\\n|\\s|$)", me.username()).as_str())
+            .unwrap()
+            .is_match(txt),
+        None => false,
     }
 }
